@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Minesweeper</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                background-color: #f0f0f0;
+            }
+            #game-container {
+                display: grid;
+                grid-template-columns: repeat(var(--size), 30px);
+                grid-gap: 2px;
+                margin: 20px;
+            }
+            .cell {
+                width: 30px;
+                height: 30px;
+                background-color: #ccc;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+                border: none;
+                font-size: 16px;
+            }
+            .cell.revealed {
+                background-color: #fff;
+            }
+            .cell.flagged {
+                background-color: #ff0;
+            }
+            .cell.mine {
+                background-color: #f00;
+                color: #fff;
+            }
+            #controls {
+                margin-bottom: 20px;
+            }
+            button {
+                margin: 0 10px;
+                padding: 10px;
+                border: none;
+                border-radius: 5px;
+                background-color: #4caf50;
+                color: #fff;
+                cursor: pointer;
+            }
+            button:hover {
+                background-color: #3e8e41;
+            }
+            #difficulty {
+                margin: 0 10px;
+                padding: 10px;
+                border: none;
+                border-radius: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Minesweeper</h1>
+        <div id="controls">
+            <button id="new-game">New Game</button>
+            <select id="difficulty">
+                <option value="easy">Easy (9x9, 10 mines)</option>
+                <option value="medium">Medium (16x16, 40 mines)</option>
+                <option value="hard">Hard (30x16, 99 mines)</option>
+            </select>
+        </div>
+        <div id="game-container" style="--size: 9"></div>
+
+        <script>
+            let gameContainer = document.getElementById("game-container");
+            let difficultySelect = document.getElementById("difficulty");
+            let newGameButton = document.getElementById("new-game");
+            let gridSize;
+            let mineCount;
+            let grid = [];
+            let revealed = [];
+            let flagged = [];
+            let gameOver = false;
+
+            // Initialize game
+            newGame();
+
+            // Event listeners
+            newGameButton.addEventListener("click", newGame);
+            difficultySelect.addEventListener("change", newGame);
+
+            function newGame() {
+                gameOver = false;
+                let difficulty = difficultySelect.value;
+                switch (difficulty) {
+                    case "easy":
+                        gridSize = 9;
+                        mineCount = 10;
+                        break;
+                    case "medium":
+                        gridSize = 16;
+                        mineCount = 40;
+                        break;
+                    case "hard":
+                        gridSize = 30;
+                        mineCount = 99;
+                        break;
+                }
+                gameContainer.style.setProperty("--size", gridSize);
+                initGrid();
+                generateGrid();
+                renderGrid();
+            }
+
+            function initGrid() {
+                grid = [];
+                revealed = [];
+                flagged = [];
+                for (let i = 0; i < gridSize * gridSize; i++) {
+                    grid.push(0);
+                    revealed.push(false);
+                    flagged.push(false);
+                }
+            }
+
+            function generateGrid() {
+                // Randomly place mines
+                let minesPlaced = 0;
+                while (minesPlaced < mineCount) {
+                    let index = Math.floor(Math.random() * grid.length);
+                    if (grid[index] !== -1) {
+                        grid[index] = -1;
+                        minesPlaced++;
+                    }
+                }
+                // Calculate adjacent mine counts
+                for (let i = 0; i < grid.length; i++) {
+                    if (grid[i] === -1) continue;
+                    let count = 0;
+                    for (let x = -1; x <= 1; x++) {
+                        for (let y = -1; y <= 1; y++) {
+                            let adjacentIndex = i + x + y * gridSize;
+                            if (x === 0 && y === 0) continue;
+                            if (
+                                adjacentIndex >= 0 &&
+                                adjacentIndex < grid.length &&
+                                grid[adjacentIndex] === -1
+                            ) {
+                                count++;
+                            }
+                        }
+                    }
+                    grid[i] = count;
+                }
+            }
+
+            function renderGrid() {
+                gameContainer.innerHTML = "";
+                for (let i = 0; i < grid.length; i++) {
+                    let cell = document.createElement("button");
+                    cell.classList.add("cell");
+                    if (revealed[i]) {
+                        cell.classList.add("revealed");
+                        if (grid[i] === -1) {
+                            cell.classList.add("mine");
+                            cell.textContent = "*";
+                        } else if (grid[i] > 0) {
+                            cell.textContent = grid[i];
+                        }
+                    }
+                    if (flagged[i]) {
+                        cell.classList.add("flagged");
+                        cell.textContent = "F";
+                    }
+                    cell.addEventListener("click", () => {
+                        if (gameOver) return;
+                        if (!revealed[i]) {
+                            if (flagged[i]) return;
+                            reveal(i);
+                        }
+                    });
+                    cell.addEventListener("contextmenu", (e) => {
+                        e.preventDefault();
+                        if (gameOver) return;
+                        if (!revealed[i]) {
+                            flagged[i] = !flagged[i];
+                            renderGrid();
+                        }
+                    });
+                    gameContainer.appendChild(cell);
+                }
+            }
+
+            function reveal(index) {
+                if (revealed[index]) return;
+                revealed[index] = true;
+                if (grid[index] === -1) {
+                    gameOver = true;
+                    alert("Game Over!");
+                    renderGrid();
+                    return;
+                }
+                if (grid[index] === 0) {
+                    for (let x = -1; x <= 1; x++) {
+                        for (let y = -1; y <= 1; y++) {
+                            let adjacentIndex = index + x + y * gridSize;
+                            if (x === 0 && y === 0) continue;
+                            if (
+                                adjacentIndex >= 0 &&
+                                adjacentIndex < grid.length
+                            ) {
+                                reveal(adjacentIndex);
+                            }
+                        }
+                    }
+                }
+                renderGrid();
+                checkWin();
+            }
+
+            function checkWin() {
+                for (let i = 0; i < grid.length; i++) {
+                    if (grid[i] !== -1 && !revealed[i]) return;
+                }
+                gameOver = true;
+                alert("You Win!");
+            }
+        </script>
+    </body>
+</html>
