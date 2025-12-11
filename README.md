@@ -22,3 +22,10 @@ Open models:
 * **[Moonshot AI Kimi K2](kimi-k2/index.html)**: Kimi K2 Instruct via Groq Playground
 * **[Meta LLama](llama/index.html)**: LLama4 Maverick (17B-128E) via Groq Playground
 * **[Alibaba Qwen](qwen/index.html)**: Qwen 3 Coder via Qwen Chat
+
+## Reviews
+
+Code reviews of the game implementations:
+
+* [review by Anthropic Claude](REVIEW-CLAUDE.md)
+* [review by OpenAI Codex](REVIEW-CODEX.md)
